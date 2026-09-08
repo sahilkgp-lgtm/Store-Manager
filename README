@@ -1,28 +1,67 @@
-/project_root
-│── run.py                 # (Entry point: initializes the app)
+Store Manager/
 │
-├── /app
-│   ├── __init__.py        # (Creates Flask app, registers blueprints)
-│   ├── database.py        # (Holds the get_connection() logic)
-│   │
-│   └── /routes            # (Replaces the monolithic app.py API routes)
-│       ├── customers.py   # (@customers_bp.route('/'))
-│       ├── suppliers.py   # (@suppliers_bp.route('/'))
-│       ├── inventory.py   # (@inventory_bp.route('/'))
-│       ├── expenses.py    # (@expenses_bp.route('/'))
-│       └── billing.py     # (Handles CounterSale, F2, F3 endpoints)
+├── run.py                       # Application entry point script
+├── .env.example                 # Template for environment variables (DB credentials, mail, etc.)
+├── .gitignore                   # Files and folders to ignore (venv, __pycache__, uploads, .env)
+├── requirements.txt             # Python dependencies (Flask, psycopg2-binary, python-dotenv, werkzeug)
+├── create_user.py               # CLI utility script to bootstrap/activate shopkeeper accounts
+├── database_migration_2.sql     # PostgreSQL database schema & table definitions
+├── app.py                       # Monolithic/Core Flask application backend
 │
-├── /templates             # (Replaces the monolithic index.html)
-│   ├── base.html          # (Contains <head>, top-navbar, and quick-action bar)
-│   ├── customers.html     # (Inherits base.html)
-│   ├── inventory.html     # (Inherits base.html)
-│   └── billing.html       # (Contains the Bottom-Left controls grid)
+├── uploads/
+│   └── verification_docs/       # Secure storage for store verification & license documents
 │
-└── /static
-    ├── /css
-    │   └── style.css      
-    └── /js                # (Replaces monolithic app.js)
-        ├── main.js        # (Tab switching, global Toast UI)
-        ├── api.js         # (Reusable fetch() wrappers)
-        ├── customers.js   # (Customer table rendering, Ledger modal)
-        └── billing.js     # (Save, View, Print layout mapping, SMS triggers)
+├── static/
+│   ├── css/
+│   │   └── style.css            # Global styling, POS layouts, and component themes
+│   ├── images/
+│   │   └── upi_qr.png           # UPI QR code asset for subscription payments
+│   └── js/
+│       └── app.js               # Frontend routing, API fetch wrappers, and UI state management
+│ 
+└── templates/
+    ├── base.html                # Base layout template containing navigation and quick action bars
+    ├── index.html               # Main dashboard UI (POS billing, inventory, ledger, reports)
+    ├── login.html               # Shopkeeper authentication page
+    ├── payment_pending.html     # UPI subscription payment and UTR verification screen[cite: 16]
+    ├── admin_approvals.html     # Distributor/Admin panel for subscription & store verifications
+    └── components/
+        └── quick_actions.html   # Shortcut action bar component (F1-F11 POS navigation)[cite: 17]
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# AgriKisan — Agricultural Store POS & Inventory Management System
+
+AgriKisan is a comprehensive, multi-tenant Point of Sale (POS), Inventory, and Ledger Management 
+web application built specifically for agricultural input distributors, fertilizer stores, and seed merchants. 
+It streamlines daily retail billing, GST calculations, stock batch tracking, customer credit dues, and distributor subscription verification.
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## Key Features
+
+* ⚡ Fast POS & Billing:** Quick action shortcuts (`F1` to `F11`) for counter sales, purchases, payments, receipts, and expense logging[cite: 17].
+* 📦 Inventory & Batch Management:** Track material batches, MRP, purchase rates, expiry dates, and automated low-stock threshold alerts.
+* 👥 Customer & Supplier Ledgers:** Maintain customer credit limits, crop profiles, irrigation details, outstanding balances, and auto-updating account ledgers.
+* 💳 UPI Subscription & Approval Workflow:** Built-in subscription gating with UPI QR scanning, UTR reference submission[cite: 16], and distributor admin activation.
+* 📊 Financial Reports & History:** Real-time summary metrics for daily sales, purchases, expenses, and date-wise ledger transaction histories.
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## Tech Stack
+
+* Backend: Python, Flask, Psycopg2 (PostgreSQL adapter)
+* Database: PostgreSQL (with Row/User data-scoping constraints)
+* Frontend: HTML5, CSS3, JavaScript (Responsive POS layout)
+* Security: Werkzeug password hashing, Flask session management, role & subscription middleware
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## Project Directory Structure
+
+├── app.py                  # Core Flask backend application routes & APIs
+├── create_user.py          # Utility script to create/activate shopkeeper accounts
+├── database_migration_2.sql# PostgreSQL database schema
+├── requirements.txt        # Python package dependencies
+├── static/                 # CSS stylesheets, JavaScript files, and images
+└── templates/              # HTML templates and UI components (Quick Action bar, modals)
