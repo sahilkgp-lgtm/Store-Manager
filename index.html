@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AgriKisan Store Manager</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span aria-hidden="true">🌾</span>
+      <div>
+        <strong id="displayStoreName">Agri Kisan Store</strong>
+        <div class="brand-subtitle">Retail & wholesale manager</div>
+      </div>
+    </div>
+    <nav class="main-nav" aria-label="Main navigation" style="display: flex; align-items: center; width: 100%; gap: 6px; padding: 4px 0;">
+      <button class="nav-button active" data-view="dashboard">Dashboard</button>
+      <button class="nav-button" data-view="sales">Sell</button>
+      <button class="nav-button" data-view="purchase">Purchase</button>
+      <button class="nav-button" data-view="refund" style="color: #f6d87c;">Refund / Return</button>
+      <button class="nav-button" data-view="customers">All Customers</button>
+      <button class="nav-button" data-view="suppliers">All Suppliers</button>
+      <button class="nav-button" data-view="inventory">Stock & Inventory</button>
+      <button class="nav-button" data-view="reports">Receipt and Bills</button>
+      
+      <div style="margin-left: auto; display: flex; gap: 8px;">
+        <button class="button secondary" data-open="profileModal" style="padding: 9px 12px; font-size: 14px; border: none; background: transparent; color: #fff; cursor: pointer;">⚙️ Settings</button>
+        <button class="button" data-open="helpModal" style="background: #c2410c; color: #fff; font-size: 14px; font-weight: 700; padding: 9px 20px; border: none; border-radius: 3px; cursor: pointer;">HELP</button>
+      </div>
+    </nav>
+  </header>
+
+  <main class="page-shell">
+    <!-- DASHBOARD VIEW -->
+    <section class="view active" id="dashboardView">
+      <div class="page-title">
+        <div><h1>Business dashboard</h1><p>Today’s store activity and balances.</p></div>
+        <button class="button secondary" data-action="refresh-all">Refresh data</button>
+      </div>
+
+      <div class="summary-grid">
+        <article>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Sales</span>
+            <select id="salesMetricToggle" class="table-button" style="padding: 2px 6px; font-size: 11px;"><option value="today">Today</option><option value="total">Total</option></select>
+          </div>
+          <strong id="salesMetricVal">₹0.00</strong>
+        </article>
+        <article>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Purchases</span>
+            <select id="purchaseMetricToggle" class="table-button" style="padding: 2px 6px; font-size: 11px;"><option value="today">Today</option><option value="total">Total</option></select>
+          </div>
+          <strong id="purchaseMetricVal">₹0.00</strong>
+        </article>
+        <article>
+          <span>Customer dues</span>
+          <strong id="customerDues">₹0.00</strong>
+        </article>
+        <article>
+          <span>Supplier outstanding</span>
+          <strong id="supplierOutstanding">₹0.00</strong>
+        </article>
+        <article>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Expenses</span>
+            <select id="expenseMetricToggle" class="table-button" style="padding: 2px 6px; font-size: 11px;"><option value="today">Today</option><option value="total">Total</option></select>
+          </div>
+          <strong id="expensesMetricVal">₹0.00</strong>
+        </article>
+        <article>
+          <span>Low-stock products</span>
+          <strong id="lowStockCount">0</strong>
+        </article>
+      </div>
+
+      <div class="panel two-column">
+        <div>
+          <h2>Start a task</h2>
+          <div class="action-list">
+            <button class="button primary" data-view="sales">Create a sale</button>
+            <button class="button secondary" data-view="purchase">Record a purchase</button>
+            <button class="button secondary" data-open="customerModal">Add customer</button>
+            <button class="button secondary" data-open="supplierModal">Add supplier</button>
+          </div>
+        </div>
+        <div>
+          <h2>How balances work</h2>
+          <p class="muted">A credit sale increases customer dues. An unpaid purchase increases supplier outstanding. Receipts and payments reduce those balances while keeping a history.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SALES VIEW -->
+    <section class="view" id="salesView">
+      <div class="page-title"><div><h1>Sales bill</h1><p>Sell available stock to a customer or as a cash sale.</p></div><div class="button-row"><button class="button secondary" data-action="view-bills" data-bill-type="SALE">View / modify bills</button><button class="button secondary" data-action="view-bills">View all transactions history</button></div></div>
+      <div class="panel">
+        <div class="bill-topline">
+          <label style="position: relative;">
+            Customer Search
+            <input type="text" id="saleCustomerSearch" placeholder="Type name or phone to search...">
+            <input type="hidden" id="saleParty" value="">
+            <div id="customerDropdownList" class="hidden" style="position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #d1d5db; max-height: 200px; overflow-y: auto; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"></div>
+          </label>
+          <button class="button secondary small" data-open="customerModal">+ Add customer</button>
+          <span class="editing-note hidden" id="saleEditingNote"></span>
+        </div>
+        <div class="entry-grid sale-entry">
+          <label>Material<select id="saleProduct"><option value="">Select stock item</option></select></label>
+          <label>Brand<input id="saleBrand" readonly></label>
+          <label>Batch<input id="saleBatch" readonly></label>
+          <label>Available<input id="saleAvailable" readonly></label>
+          <label>Quantity<input id="saleQty" type="number" min="0.01" step="0.01" value="1"></label>
+          <label>Rate<input id="saleRate" type="number" min="0" step="0.01"></label>
+          <label>CGST %<input id="saleCgst" type="number" min="0" step="0.01"></label>
+          <label>SGST %<input id="saleSgst" type="number" min="0" step="0.01"></label>
+          <button class="button primary" data-action="add-sale-line">Add item</button>
+        </div>
+        <div class="table-scroll"><table><thead><tr><th>#</th><th>Material</th><th>Brand</th><th>Batch</th><th>Qty</th><th>Rate</th><th>GST</th><th>Total</th><th></th></tr></thead><tbody id="saleCart"></tbody></table></div>
+        <div class="bill-footer"><div class="total-box"><span>Units</span><strong id="saleUnits">0</strong></div><div class="total-box"><span>Gross Subtotal</span><strong id="saleGross">₹0.00</strong></div><div class="total-box"><span>Tax (GST)</span><strong id="saleTax">₹0.00</strong></div><label>Transport<input id="saleTransport" type="number" min="0" step="0.01" value="0"></label><label>Paid now<input id="salePaid" type="number" min="0" step="0.01" value="0"></label><label>Notes<input id="saleNotes" maxlength="2000" placeholder="Optional"></label><div class="grand-total"><span>Final Payable</span><strong id="saleTotal">₹0.00</strong></div><button class="button primary" data-action="save-sale">Save sale</button></div>
+      </div>
+    </section>
+
+    <!-- REFUND VIEW -->
+    <section class="view" id="refundView">
+      <div class="page-title"><div><h1>Refund / Return</h1><p>Take back inventory from a customer and adjust balances.</p></div><div class="button-row"><button class="button secondary" data-action="clear-refund">Clear refund</button></div></div>
+      <div class="panel" style="border-top: 3px solid #b42318;">
+        <div class="bill-topline">
+          <label style="position: relative;">
+            Customer Search
+            <input type="text" id="refundCustomerSearch" placeholder="Type name or phone to search...">
+            <input type="hidden" id="refundParty" value="">
+            <div id="refundCustomerDropdownList" class="hidden" style="position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #d1d5db; max-height: 200px; overflow-y: auto; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"></div>
+          </label>
+        </div>
+        <div class="entry-grid sale-entry">
+          <label>Material to Return<select id="refundProduct"><option value="">Select stock item</option></select></label>
+          <label>Brand<input id="refundBrand" readonly></label>
+          <label>Batch<input id="refundBatch" readonly></label>
+          <label>In Stock<input id="refundAvailable" readonly></label>
+          <label>Return Qty<input id="refundQty" type="number" min="0.01" step="0.01" value="1"></label>
+          <label>Refund Rate<input id="refundRate" type="number" min="0" step="0.01"></label>
+          <label>CGST %<input id="refundCgst" type="number" min="0" step="0.01"></label>
+          <label>SGST %<input id="refundSgst" type="number" min="0" step="0.01"></label>
+          <button class="button primary" data-action="add-refund-line" style="background: #b42318; border-color: #b42318;">Add return</button>
+        </div>
+        <div class="table-scroll"><table><thead><tr><th>#</th><th>Material</th><th>Brand</th><th>Batch</th><th>Qty Returned</th><th>Rate</th><th>GST</th><th>Total Refund</th><th></th></tr></thead><tbody id="refundCart"></tbody></table></div>
+        <div class="bill-footer"><div class="total-box"><span>Units</span><strong id="refundUnits">0</strong></div><div class="total-box"><span>Gross</span><strong id="refundGross">₹0.00</strong></div><div class="total-box"><span>Tax Return</span><strong id="refundTax">₹0.00</strong></div><label>Deductions<input id="refundTransport" type="number" min="0" step="0.01" value="0"></label><label>Cash Given<input id="refundPaid" type="number" min="0" step="0.01" value="0"></label><label>Notes<input id="refundNotes" maxlength="2000" placeholder="Reason for return"></label><div class="grand-total"><span>Total Refund Value</span><strong id="refundTotal">₹0.00</strong></div><button class="button primary" data-action="save-refund" style="background: #b42318; border-color: #b42318;">Save Refund</button></div>
+      </div>
+    </section>
+
+    <!-- PURCHASE VIEW -->
+    <section class="view" id="purchaseView">
+      <div class="page-title"><div><h1>Purchase bill</h1><p>Record supplier purchases and add stock automatically.</p></div><div class="button-row"><button class="button secondary" data-action="view-bills" data-bill-type="PURCHASE">View / modify bills</button><button class="button secondary" data-action="clear-purchase">Clear bill</button></div></div>
+      <div class="panel">
+        <div class="bill-topline"><label>Supplier <select id="purchaseParty"><option value="">Select supplier</option></select></label><button class="button secondary small" data-open="supplierModal">+ Add supplier</button><span class="editing-note hidden" id="purchaseEditingNote"></span></div>
+        <div class="entry-grid purchase-entry">
+          <label>Material<input id="purchaseName" required></label><label>Brand<input id="purchaseBrand"></label><label>Batch<input id="purchaseBatch" required></label><label>Expiry<input id="purchaseExpiry" type="date"></label><label>Quantity<input id="purchaseQty" type="number" min="0.01" step="0.01" value="1"></label><label>Cost rate<input id="purchaseRate" type="number" min="0" step="0.01"></label><label>MRP<input id="purchaseMrp" type="number" min="0" step="0.01"></label><label>CGST %<input id="purchaseCgst" type="number" min="0" step="0.01" value="0"></label><label>SGST %<input id="purchaseSgst" type="number" min="0" step="0.01" value="0"></label><button class="button primary" data-action="add-purchase-line">Add item</button>
+        </div>
+        <div class="table-scroll"><table><thead><tr><th>#</th><th>Material</th><th>Brand</th><th>Batch</th><th>Expiry</th><th>Qty</th><th>Rate</th><th>MRP</th><th>GST</th><th>Total</th><th></th></tr></thead><tbody id="purchaseCart"></tbody></table></div>
+        <div class="bill-footer"><div class="total-box"><span>Units</span><strong id="purchaseUnits">0</strong></div><div class="total-box"><span>Gross</span><strong id="purchaseGross">₹0.00</strong></div><div class="total-box"><span>GST</span><strong id="purchaseTax">₹0.00</strong></div><label>Transport<input id="purchaseTransport" type="number" min="0" step="0.01" value="0"></label><label>Paid now<input id="purchasePaid" type="number" min="0" step="0.01" value="0"></label><label>Notes<input id="purchaseNotes" maxlength="2000" placeholder="Optional"></label><div class="grand-total"><span>Final Payable</span><strong id="purchaseTotal">₹0.00</strong></div><button class="button primary" data-action="save-purchase">Save purchase</button></div>
+      </div>
+    </section>
+
+    <!-- CUSTOMERS VIEW -->
+    <section class="view" id="customersView">
+      <div class="page-title">
+        <div>
+          <h1>Customers & farmers</h1>
+          <p>Manage customer details and amounts due.</p>
+        </div>
+        <div class="button-row">
+          <input type="text" id="customerSearch" placeholder="Search name or phone..." style="min-width: 250px;">
+          <button class="button primary" data-open="customerModal">+ Add customer</button>
+        </div>
+      </div>
+      <div class="panel"><div class="table-scroll"><table><thead><tr><th>Name</th><th>Phone</th><th>Location</th><th>GSTIN</th><th>Credit limit</th><th>Due</th><th></th></tr></thead><tbody id="customersTable"></tbody></table></div></div>
+    </section>
+
+    <!-- SUPPLIERS VIEW -->
+    <section class="view" id="suppliersView">
+      <div class="page-title">
+        <div>
+          <h1>Suppliers</h1>
+          <p>Manage wholesalers and supplier outstanding balances.</p>
+        </div>
+        <div class="button-row">
+          <input type="text" id="supplierSearch" placeholder="Search agency or phone..." style="min-width: 250px;">
+          <button class="button primary" data-open="supplierModal">+ Add supplier</button>
+        </div>
+      </div>
+      <div class="panel"><div class="table-scroll"><table><thead><tr><th>Agency</th><th>Contact</th><th>Phone</th><th>GSTIN</th><th>Outstanding</th><th></th></tr></thead><tbody id="suppliersTable"></tbody></table></div></div>
+    </section>
+
+    <!-- INVENTORY VIEW -->
+    <section class="view" id="inventoryView">
+      <div class="page-title">
+        <div>
+          <h1>Inventory & stock</h1>
+          <p>Stock changes after every purchase, sale, or recorded adjustment.</p>
+        </div>
+        <div class="button-row">
+          <input type="text" id="inventorySearch" placeholder="Search product, brand, or batch..." style="min-width: 250px;">
+          <button class="button primary" data-open="inventoryModal">+ Add opening stock</button>
+        </div>
+      </div>
+      <div class="panel"><div class="table-scroll"><table><thead><tr><th>Product</th><th>Brand</th><th>Batch</th><th>Alert at</th><th>Purchase rate</th><th>MRP</th><th>Expiry</th><th>GST</th><th>Stock Quantity</th><th></th></tr></thead><tbody id="inventoryTable"></tbody></table></div></div>
+    </section>
+
+    <!-- LEDGER VIEW -->
+    <section class="view" id="ledgerView">
+      <div class="page-title"><div><h1>Payments & receipts</h1><p>Record money received from customers or paid to suppliers.</p></div></div>
+      <div class="panel form-panel"><form id="ledgerForm" class="form-grid"><label>Transaction type<select id="ledgerType"><option value="CUSTOMER">Customer receipt</option><option value="SUPPLIER">Supplier payment</option></select></label><label>Party<select id="ledgerParty" required></select></label><label>Amount<input id="ledgerAmount" type="number" min="0.01" step="0.01" required></label><label>Payment mode<select id="ledgerMode"><option>Cash</option><option>UPI</option><option>Bank transfer</option><option>Cheque</option></select></label><label class="wide">Notes<input id="ledgerNotes" maxlength="2000"></label><button class="button primary" type="submit">Save transaction</button></form></div>
+      <div class="panel"><div class="table-scroll"><table><thead><tr><th>Date</th><th>Type</th><th>Party</th><th>Amount</th><th>Mode</th><th>Notes</th></tr></thead><tbody id="ledgerTable"></tbody></table></div></div>
+    </section>
+
+    <!-- EXPENSES VIEW -->
+    <section class="view" id="expensesView">
+      <div class="page-title"><div><h1>Expenses</h1><p>Record business costs for your financial reports.</p></div></div>
+      <div class="panel form-panel"><form id="expenseForm" class="form-grid"><label>Category<input id="expenseCategory" placeholder="Rent, electricity, delivery…" required></label><label>Amount<input id="expenseAmount" type="number" min="0.01" step="0.01" required></label><label>Date<input id="expenseDate" type="date" required></label><label class="wide">Notes<input id="expenseNotes" maxlength="2000"></label><button class="button primary" type="submit">Save expense</button></form></div>
+      <div class="panel"><div class="table-scroll"><table><thead><tr><th>Date</th><th>Category</th><th>Amount</th><th>Notes</th></tr></thead><tbody id="expensesTable"></tbody></table></div></div>
+    </section>
+
+    <!-- REPORTS VIEW -->
+    <section class="view" id="reportsView">
+      <div class="page-title"><div><h1>Financial reports</h1><p>Totals use posted sales and purchases. Voided bills are excluded.</p></div><button class="button secondary" data-action="refresh-all">Refresh report</button></div>
+      <div class="summary-grid reports"><article><span>Sales</span><strong id="reportSales">₹0.00</strong></article><article><span>Purchases</span><strong id="reportPurchases">₹0.00</strong></article><article><span>Expenses</span><strong id="reportExpenses">₹0.00</strong></article><article><span>Sales − purchases − expenses</span><strong id="reportMargin">₹0.00</strong></article></div>
+      <div class="panel"><h2>Saved bills</h2><p class="muted">Open either sales or purchase history to inspect, edit, print, or void a bill.</p><div class="button-row"><button class="button secondary" data-action="view-bills" data-bill-type="SALE">Sales history</button><button class="button secondary" data-action="view-bills" data-bill-type="PURCHASE">Purchase history</button></div></div>
+      <div class="panel" style="margin-top: 20px;">
+        <h3>Specific Day History Lookup</h3>
+        <div style="display: flex; gap: 12px; margin-top: 12px; align-items: center;">
+          <input type="date" id="historyDateInput" class="form-control" style="max-width: 200px;">
+          <button class="button primary" data-action="fetch-date-history">View Day History</button>
+        </div>
+        <div id="dateHistoryResults" style="margin-top: 16px;"></div>
+      </div>
+    </section>
+
+    <!-- CONTACT VIEW -->
+    <section class="view" id="contactView">
+      <div class="page-title"><div><h1>Contact us</h1><p>Save a support request or enquiry in the database.</p></div></div>
+      <div class="panel form-panel"><form id="contactForm" class="form-grid"><label>Name<input id="contactName"></label><label>Phone<input id="contactPhone"></label><label class="wide">Message<textarea id="contactMessage" maxlength="2000" required></textarea></label><button class="button primary" type="submit">Send enquiry</button></form></div>
+    </section>
+  </main>
+
+<footer class="quick-actions" aria-label="Keyboard shortcuts">
+  <button data-view="dashboard">F1 Dashboard</button>
+  <button data-view="purchase">F2 Purchase</button>
+  <button data-view="sales">F3 Sales</button>
+  <button data-view="ledger" data-ledger-type="SUPPLIER">F4 Payment</button>
+  <button data-view="ledger" data-ledger-type="CUSTOMER">F5 Receipt</button>
+  <button data-view="expenses">F6 Expense</button>
+  <button data-view="inventory">F7/F8 Stock</button>
+  <button data-view="customers">F9 Parties</button>
+
+  
+  <button data-view="contact">F11 Contact</button>
+</footer>
+
+  <!-- ============================================== -->
+  <!-- COMBINED SETTINGS & PROFILE MODAL              -->
+  <!-- ============================================== -->
+  <div class="modal hidden" id="profileModal" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
+    <div class="modal-box wide">
+      <div class="modal-heading">
+        <h2 id="profileModalTitle">Settings & Profile</h2>
+        <button class="icon-button" data-close="profileModal" aria-label="Close">×</button>
+      </div>
+      
+      <div class="two-column" style="gap: 40px; align-items: start;">
+        
+        <!-- Left Side: Store & Printing Profile -->
+        <div style="width: 100%;">
+          <h3 style="margin-top: 0; margin-bottom: 8px;">Store Profile</h3>
+          <p class="muted" style="margin-bottom: 20px; font-size: 13px;">This information will be printed on all customer bills and receipts to ensure regulatory compliance.</p>
+          <form id="profileForm" class="form-grid">
+            <label class="wide">Shop Name<input id="storeName" required placeholder="AgriKisan Store"></label>
+            <label class="wide">Shop Address<textarea id="storeAddress" rows="2" required placeholder="Shop No, Street, City, State, PIN"></textarea></label>
+            <label class="wide">Fertilizer/Pesticide License No. / GSTIN<input id="storeLicense" required placeholder="License / Registration No."></label>
+            <button class="button primary" type="submit" style="width: max-content; margin-top: 10px;">Save Profile Settings</button>
+          </form>
+
+          <!-- Moved Language Toggle Button Here -->
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--line);">
+            <h3 style="margin-top: 0; margin-bottom: 8px;">Language / भाषा</h3>
+            <p class="muted" style="margin-bottom: 12px; font-size: 13px;">Switch application display language between English and Hindi.</p>
+            <button type="button" id="mainLangToggleBtn" class="button secondary" onclick="toggleLanguage()" style="padding: 9px 16px; font-size: 14px; border: 1px solid #735703; background: #3e3204; color: #f6d87c; cursor: pointer;">
+              अ/A हिन्दी
+            </button>
+          </div>
+        </div>
+        
+        <!-- Right Side: User Account Settings & Actions -->
+        <div style="width: 100%; border-left: 1px solid var(--line); padding-left: 25px;">
+           <h3 style="margin-top: 0; margin-bottom: 8px;">Account Options</h3>
+           <p class="muted" style="margin-bottom: 20px; font-size: 13px;">Manage your user account, security, and profile verification requests.</p>
+           
+           <div class="form-grid" style="margin-bottom: 20px;">
+              <label class="wide">User Name<input type="text" value="Admin / Owner" readonly></label>
+              <label class="wide">Subscription Status<input type="text" value="ACTIVE" readonly style="color: var(--success); font-weight: bold;"></label>
+           </div>
+           
+           <!-- Action Buttons -->
+           <div style="display: flex; gap: 10px;">
+              <button type="button" class="button secondary" style="flex: 1;" onclick="togglePasswordForm()">Change Password</button>
+              <button type="button" class="button secondary" style="flex: 1;" onclick="toggleProfileEditForm()">Request Profile Update</button>
+           </div>
+
+           <!-- Hidden Password Form -->
+           <form id="passwordForm" class="form-grid hidden" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--line);">
+             <label class="wide">Old Password<input type="password" id="oldPassword" required></label>
+             <label class="wide">New Password<input type="password" id="newPassword" required minlength="6" placeholder="Min 6 characters"></label>
+             <button type="submit" class="button primary" style="width: 100%; margin-top: 5px;">Save New Password</button>
+           </form>
+
+           <!-- Hidden Profile Update Request Form -->
+           <form id="profileEditRequestForm" class="form-grid hidden" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--line);" onsubmit="submitProfileRequest(event)">
+             <h4 style="margin: 0 0 8px 0; grid-column: 1/-1; color: var(--warning);">Request Store Details Change</h4>
+             <p class="muted" style="font-size: 11px; margin-bottom: 8px; grid-column: 1/-1;">Changes require admin/distributor approval for security compliance.</p>
+             <label class="wide">New Shop Name <input id="reqStoreName" required></label>
+             <label class="wide">New Shop Address <textarea id="reqStoreAddress" rows="2" required></textarea></label>
+             <label class="wide">New License / GSTIN <input id="reqStoreLicense" required></label>
+             <label class="wide">Upload Proof Document <input type="file" id="reqDocFile" required accept=".pdf,.jpg,.jpeg,.png"></label>
+             <button type="submit" class="button primary" style="width: 100%; margin-top: 5px; background: var(--warning); border-color: var(--warning);">Submit Request to Distributor</button>
+           </form>
+           
+           <!-- Log Out Button -->
+           <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--line);">
+              <button type="button" class="button primary" style="width: 100%; background: #b42318; border-color: #b42318; color: #fff;" onclick="handleLogout()">Log Out</button>
+           </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  
+
+  <div class="modal hidden" id="customerModal" role="dialog" aria-modal="true" aria-labelledby="customerModalTitle"><div class="modal-box"><div class="modal-heading"><h2 id="customerModalTitle">Add customer</h2><button class="icon-button" data-close="customerModal" aria-label="Close">×</button></div><form id="customerForm" class="form-grid"><input type="hidden" id="customerId"><label>Full name<input id="customerName" required></label><label>Phone number<input id="customerPhone" required></label><label>Location / address<input id="customerLocation"></label><label>GSTIN<input id="customerGstin"></label><label>Initial due<input id="customerDuesInput" type="number" min="0" step="0.01" value="0"></label><label>Credit limit<input id="customerLimit" type="number" min="0" step="0.01" value="10000"></label><label>Primary crops<input id="customerCrops"></label><label>Irrigation source<input id="customerIrrigation"></label><button class="button primary" type="submit">Save customer</button></form></div></div>
+
+  <div class="modal hidden" id="supplierModal" role="dialog" aria-modal="true" aria-labelledby="supplierModalTitle"><div class="modal-box"><div class="modal-heading"><h2 id="supplierModalTitle">Add supplier</h2><button class="icon-button" data-close="supplierModal" aria-label="Close">×</button></div><form id="supplierForm" class="form-grid"><input type="hidden" id="supplierId"><label>Agency name<input id="supplierAgency" required></label><label>Contact name<input id="supplierContact"></label><label>Phone number<input id="supplierPhone" required></label><label>GSTIN<input id="supplierGstin"></label><label>Address<input id="supplierAddress"></label><label>Email<input id="supplierEmail" type="email"></label><label>Initial outstanding<input id="supplierOutstandingInput" type="number" min="0" step="0.01" value="0"></label><button class="button primary" type="submit">Save supplier</button></form></div></div>
+
+  <div class="modal hidden" id="inventoryModal" role="dialog" aria-modal="true" aria-labelledby="inventoryModalTitle"><div class="modal-box"><div class="modal-heading"><h2 id="inventoryModalTitle">Add opening stock</h2><button class="icon-button" data-close="inventoryModal" aria-label="Close">×</button></div><form id="inventoryForm" class="form-grid"><label>Product name<input id="inventoryName" required></label><label>Brand<input id="inventoryBrand"></label><label>Batch number<input id="inventoryBatch" required></label><label>Expiry date<input id="inventoryExpiry" type="date"></label><label>Opening stock<input id="inventoryStock" type="number" min="0" step="0.01" value="0"></label><label>Purchase rate<input id="inventoryPurchaseRate" type="number" min="0" step="0.01" value="0"></label><label>MRP<input id="inventoryMrp" type="number" min="0" step="0.01" value="0"></label><label>CGST %<input id="inventoryCgst" type="number" min="0" step="0.01" value="0"></label><label>SGST %<input id="inventorySgst" type="number" min="0" step="0.01" value="0"></label><button class="button primary" type="submit">Add stock</button></form></div></div>
+
+  <div class="modal hidden" id="adjustmentModal" role="dialog" aria-modal="true" aria-labelledby="adjustmentModalTitle"><div class="modal-box compact"><div class="modal-heading"><h2 id="adjustmentModalTitle">Adjust stock</h2><button class="icon-button" data-close="adjustmentModal" aria-label="Close">×</button></div><form id="adjustmentForm" class="form-grid"><input id="adjustmentInventoryId" type="hidden"><label>Direction<select id="adjustmentDirection"><option value="ADD">Add stock</option><option value="REMOVE">Remove stock</option></select></label><label>Quantity<input id="adjustmentQuantity" type="number" min="0.01" step="0.01" required></label><label class="wide">Reason<input id="adjustmentReason" required placeholder="Damage, physical count, return…"></label><label class="wide">Notes<input id="adjustmentNotes"></label><button class="button primary" type="submit">Save adjustment</button></form></div></div>
+
+  <div class="modal hidden" id="historyModal" role="dialog" aria-modal="true" aria-labelledby="historyModalTitle">
+    <div class="modal-box wide">
+      <div class="modal-heading" style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+        <h2 id="historyModalTitle" style="margin: 0;">Bill history</h2>
+        <div style="display: flex; align-items: center; gap: 10px; margin-left: auto;">
+          <input type="text" id="billSearchInput" placeholder="Search bill # or party..." style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 14px; min-width: 220px;">
+          <button class="icon-button" data-close="historyModal" aria-label="Close">×</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Bill</th><th>Date</th><th>Party</th><th>Total</th><th>Paid</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody id="historyTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="statementModal" role="dialog" aria-modal="true" aria-labelledby="statementModalTitle">
+    <div class="modal-box wide">
+      <div class="modal-heading">
+        <div>
+          <h2 id="statementModalTitle">Party History</h2>
+          <p class="editing-note" id="statementPending" style="margin-top: 5px; font-size: 15px;">Pending: ₹0.00</p>
+        </div>
+        <div>
+          <button class="button secondary" id="btnPrintSelected" data-action="print-selected" style="margin-right: 8px;">🖨️ Print Selected</button>
+          <button class="button secondary" id="btnPrintStatement" data-action="print-statement" style="margin-right: 15px;">🖨️ Print All</button>
+          <button class="icon-button" data-close="statementModal" aria-label="Close">×</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 40px;"><input type="checkbox" id="selectAllStatement"></th>
+              <th>Date</th><th>Type</th><th>Ref #</th><th>Amount</th><th>Status / Paid</th><th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="statementTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
+  
+  <script src="{{ url_for('static', filename='translations.js') }}"></script>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
+
+

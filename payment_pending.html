@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Complete Subscription Payment - AgriKisan</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f5f7; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+    .pay-card { background: #fff; width: 100%; max-width: 420px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); padding: 30px; text-align: center; }
+    .pay-card h2 { margin: 0 0 8px; font-size: 22px; color: #1e293b; }
+    .pay-card p { font-size: 14px; color: #64748b; margin: 0 0 20px; }
+    .qr-container { background: #fafafa; border: 1px dashed #cbd5e1; padding: 15px; border-radius: 8px; display: inline-block; margin-bottom: 15px; }
+    .qr-container img { width: 220px; height: 220px; object-fit: contain; }
+    .amount-badge { font-size: 20px; font-weight: 700; color: #2e7d32; background: #e8f5e9; padding: 8px 16px; border-radius: 6px; display: inline-block; margin-bottom: 20px; }
+    .input-group { text-align: left; margin-bottom: 15px; }
+    .input-group label { display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 5px; }
+    .input-group input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+    .btn-submit { width: 100%; background: #7c5806; color: #fff; border: none; padding: 12px; font-size: 15px; font-weight: 600; border-radius: 6px; cursor: pointer; }
+    .btn-submit:hover { background: #634504; }
+    .note { font-size: 12px; color: #94a3b8; margin-top: 15px; line-height: 1.4; }
+  </style>
+</head>
+<body>
+  <div class="pay-card">
+    <h2>Scan & Pay Subscription</h2>
+    <p>Scan using any UPI app (GPay, PhonePe, Paytm)</p>
+    
+    <div class="amount-badge">₹499 / Month</div>
+
+    <div class="qr-container">
+      <!-- Replace with your actual UPI QR code image path -->
+      <img src="/static/images/upi_qr.png" alt="Distributor UPI QR Code">
+    </div>
+
+    <form id="paymentConfirmForm">
+      <div class="input-group">
+        <label for="utrNumber">UPI Reference / UTR Number (12 Digits)</label>
+        <input type="text" id="utrNumber" placeholder="e.g. 328109823101" required>
+      </div>
+      <button type="submit" class="btn-submit">I Have Paid — Submit for Verification</button>
+    </form>
+
+    <p class="note">Once confirmed, the distributor will activate your store access within a few minutes.</p>
+  </div>
+
+  <script>
+    document.getElementById("paymentConfirmForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const utr = document.getElementById("utrNumber").value.trim();
+      const res = await fetch("/api/auth/submit-payment-proof", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ utr: utr })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Payment submitted! Please await distributor verification.");
+        window.location.href = "/login";
+      } else {
+        alert(data.error || "Submission failed");
+      }
+    });
+  </script>
+</body>
+</html>

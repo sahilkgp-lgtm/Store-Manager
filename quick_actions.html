@@ -1,0 +1,110 @@
+<!-- =========================================================
+     QUICK ACTION BAR COMPONENT
+     
+     Shortcut buttons (F1 to F11) for quick POS/billing navigation.
+     File location: templates/components/quick_actions.html
+========================================================== -->
+<div class="quick-action-bar">
+
+    <!-- CALCULATOR / NOTEPAD BUTTON -->
+    <button
+        class="btn btn-secondary action-btn"
+        onclick="window.open('calculator://')">
+        🔢 Calc/Notepad
+    </button>
+
+
+    <!-- COUNTER SALE BUTTON
+         Opens counterSale view through JavaScript -->
+    <button
+        class="btn btn-secondary action-btn"
+        data-view="counterSale">
+        ⚡ CounterSale
+    </button>
+
+
+    <!-- F2 PURCHASE BUTTON
+         Opens purchase bill section -->
+    <button
+        class="btn btn-secondary action-btn"
+        data-view="purchaseBill">
+        📦 F2 Purchase
+    </button>
+
+
+    <!-- F3 SALES BILL BUTTON
+         Directly opens salesBillView and updates view state -->
+    <button
+        class="btn btn-secondary action-btn"
+        onclick="
+            document.querySelectorAll('.nav-item')
+                .forEach(n=>n.classList.remove('active'));
+
+            document.querySelectorAll('.view-section')
+                .forEach(s=>s.classList.add('hidden'));
+
+            document.getElementById('salesBillView')
+                .classList.remove('hidden');
+
+            document.getElementById('pageTitle').innerText='Tax Invoice / Billing';
+
+            document.getElementById('pageSubtitle').innerText='Create F3 Sales Bill for cash or credit.';
+
+            document.getElementById('primaryAddBtn')
+                .classList.add('hidden');
+        ">
+        🧾 F3 SalesBill
+    </button>
+
+
+    <!-- F4 PAYMENTS -->
+    <button
+        class="btn btn-secondary action-btn"
+        data-view="payments">
+        💸 F4 Payments
+    </button>
+
+
+    <!-- F5 RECEIPTS -->
+    <button
+        class="btn btn-secondary action-btn"
+        data-view="receipts">
+        📥 F5 Receipts
+    </button>
+
+
+    <!-- F6 EXPENSE -->
+    <button
+        class="btn btn-secondary action-btn"
+        data-view="expenses">
+        📉 F6 Expense
+    </button>
+
+
+    <!-- F7/F8 STOCK
+         Opens inventory section -->
+    <button
+        class="btn btn-secondary action-btn"
+        data-view="inventory">
+        📊 F7/F8 Stock
+    </button>
+
+
+    <!-- F10 DELETE BILL
+         JavaScript identifies this using btnDeleteBill -->
+    <button
+        class="btn btn-secondary action-btn"
+        id="btnDeleteBill">
+        🗑️ F10 Delete
+    </button>
+
+
+    <!-- F11 SMS
+         JavaScript identifies this using btnSms -->
+    <button
+        class="btn btn-secondary action-btn"
+        id="btnSms">
+        📱 F11 SMS
+    </button>
+
+</div>
