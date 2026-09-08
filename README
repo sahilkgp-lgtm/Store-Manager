@@ -1,0 +1,28 @@
+/project_root
+│── run.py                 # (Entry point: initializes the app)
+│
+├── /app
+│   ├── __init__.py        # (Creates Flask app, registers blueprints)
+│   ├── database.py        # (Holds the get_connection() logic)
+│   │
+│   └── /routes            # (Replaces the monolithic app.py API routes)
+│       ├── customers.py   # (@customers_bp.route('/'))
+│       ├── suppliers.py   # (@suppliers_bp.route('/'))
+│       ├── inventory.py   # (@inventory_bp.route('/'))
+│       ├── expenses.py    # (@expenses_bp.route('/'))
+│       └── billing.py     # (Handles CounterSale, F2, F3 endpoints)
+│
+├── /templates             # (Replaces the monolithic index.html)
+│   ├── base.html          # (Contains <head>, top-navbar, and quick-action bar)
+│   ├── customers.html     # (Inherits base.html)
+│   ├── inventory.html     # (Inherits base.html)
+│   └── billing.html       # (Contains the Bottom-Left controls grid)
+│
+└── /static
+    ├── /css
+    │   └── style.css      
+    └── /js                # (Replaces monolithic app.js)
+        ├── main.js        # (Tab switching, global Toast UI)
+        ├── api.js         # (Reusable fetch() wrappers)
+        ├── customers.js   # (Customer table rendering, Ledger modal)
+        └── billing.js     # (Save, View, Print layout mapping, SMS triggers)
