@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Distributor - Verification Requests</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8fafc; margin: 0; padding: 30px; color: #1e293b; }
+    h2 { margin-bottom: 20px; }
+    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); margin-bottom: 25px; padding: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+    th, td { padding: 10px 14px; border: 1px solid #e2e8f0; text-align: left; }
+    th { background: #f1f5f9; }
+    .old-val { color: #64748b; background: #fef2f2; text-decoration: line-through; }
+    .new-val { color: #166534; background: #f0fdf4; font-weight: 600; }
+    .btn { padding: 8px 14px; border-radius: 4px; border: none; font-weight: 600; cursor: pointer; margin-right: 8px; }
+    .btn-approve { background: #16a34a; color: #fff; }
+    .btn-reject { background: #dc2626; color: #fff; }
+    .btn-doc { background: #2563eb; color: #fff; text-decoration: none; padding: 7px 12px; border-radius: 4px; display: inline-block; font-size: 13px; }
+    .empty { text-align: center; color: #94a3b8; padding: 30px; }
+  </style>
+</head>
+<body>
+  <h2>Pending Store Profile Requests</h2>
+  <div class="card">
+    <div id="requestsContainer">Loading pending requests...</div>
+  </div>
+
+  <script>
+    async function loadRequests() {
+      const res = await fetch("/api/admin/profile-requests");
+      const data = await res.json();
+      const container = document.getElementById("requestsContainer");
+
+      if (!data.length) {
+        container.innerHTML = '<div class="empty">No pending profile verification requests.</div>';
+        return;
+      }
+
+      container.innerHTML = data.map(r => `
+        <div style="border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong>Account: ${r.user_name} (${r.email})</strong>
+            <a class="btn-doc" href="/api/admin/profile-requests/${r.id}/document" target="_blank">📄 View Attached Document</a>
+          </div>
+          
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 25%;">Field</th>
+                <th style="width: 37.5%;">Current (Old) Value</th>
+                <th style="width: 37.5%;">Requested (New) Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Shop Name</strong></td>
+                <td class="old-val">${r.old_store_name || '—'}</td>
+                <td class="new-val">${r.new_shop_name || '—'}</td>
+              </tr>
+              <tr>
+                <td><strong>Shop Address</strong></td>
+                <td class="old-val">${r.old_store_address || '—'}</td>
+                <td class="new-val">${r.new_shop_address || '—'}</td>
+              </tr>
+              <tr>
+                <td><strong>License / GSTIN</strong></td>
+                <td class="old-val">${r.old_store_license || '—'}</td>
+                <td class="new-val">${r.new_license_gstin || '—'}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div style="margin-top: 15px; text-align: right;">
+            <button class="btn btn-reject" onclick="handleDecision(${r.id}, 'REJECT')">✕ Reject (Keep Old)</button>
+            <button class="btn btn-approve" onclick="handleDecision(${r.id}, 'APPROVE')">✓ Approve & Update Profile</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function handleDecision(requestId, decision) {
+      if (!confirm(`Are you sure you want to ${decision} this request?`)) return;
+
+      const res = await fetch(`/api/admin/profile-requests/${requestId}/decide`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ decision })
+      });
+      const result = await res.json();
+      alert(result.message);
+      loadRequests();
+    }
+
+    loadRequests();
+  </script>
+</body>
+</html>

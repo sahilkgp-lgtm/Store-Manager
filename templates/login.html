@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login & Subscription — AgriKisan Store</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .auth-wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f4f5f0;
+      padding: 24px;
+    }
+    .auth-card {
+      width: 100%;
+      max-width: 440px;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-box);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+    .auth-header {
+      background: var(--nav);
+      padding: 24px;
+      text-align: center;
+      color: #ffffff;
+    }
+    .auth-header .brand-icon {
+      display: inline-grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      font-size: 24px;
+      background: var(--primary);
+      border-radius: var(--radius-box);
+      margin-bottom: 10px;
+    }
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid var(--line);
+    }
+    .auth-tab-btn {
+      padding: 12px;
+      background: #fafafa;
+      border: none;
+      font-weight: 600;
+      font-size: 13px;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+    }
+    .auth-tab-btn.active {
+      background: #ffffff;
+      border-bottom-color: var(--primary);
+      color: var(--primary);
+    }
+    .auth-body {
+      padding: 24px;
+    }
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .paywall-banner {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+      padding: 12px;
+      border-radius: var(--radius-sharp);
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="brand-icon">🌾</div>
+      <h2 style="margin: 0; font-size: 20px;">AgriKisan Store</h2>
+      <p style="margin: 4px 0 0; font-size: 12px; color: #d9e693;">Retail & Wholesale Cloud Manager</p>
+    </div>
+
+    <!-- Switch between Login and Register -->
+    <div class="auth-tabs">
+      <button class="auth-tab-btn active" id="tabLogin" onclick="switchAuthTab('login')">Sign In</button>
+      <button class="auth-tab-btn" id="tabRegister" onclick="switchAuthTab('register')">New Store (Subscribe)</button>
+    </div>
+
+    <div class="auth-body">
+      <!-- Paywall Notice (Visible if user logs in with expired subscription) -->
+      <div id="subAlert" class="paywall-banner hidden">
+        <strong>Subscription Required:</strong> Your account is inactive. Subscribe to unlock store management.
+      </div>
+
+      <!-- SIGN IN FORM -->
+      <form id="loginForm" class="auth-form" onsubmit="handleLogin(event)">
+        <label>
+          Email address
+          <input type="email" id="loginEmail" required placeholder="owner@store.com">
+        </label>
+        <label>
+          Password
+          <input type="password" id="loginPassword" required placeholder="••••••••">
+        </label>
+        <button type="submit" class="button primary" style="width: 100%; margin-top: 8px;">Log In</button>
+      </form>
+
+      <!-- REGISTER & SUBSCRIBE FORM -->
+      <form id="registerForm" class="auth-form hidden" onsubmit="handleRegister(event)">
+        <label>
+          Store / Owner Name
+          <input type="text" id="regName" required placeholder="e.g. Kisan Agro Center">
+        </label>
+        <label>
+          Email address
+          <input type="email" id="regEmail" required placeholder="owner@store.com">
+        </label>
+        <label>
+          Set Password
+          <input type="password" id="regPassword" required minlength="6" placeholder="Min 6 characters">
+        </label>
+        <div style="background: #f9fafb; border: 1px dashed #cbd5e1; padding: 12px; border-radius: 4px; font-size: 12px;">
+          <strong>Plan:</strong> Monthly Retail Pass (₹499/mo)<br>
+          <span style="color: #64748b;">Includes billing, unlimited inventory, party ledgers & automated reports.</span>
+        </div>
+        <button type="submit" class="button primary" style="width: 100%; margin-top: 8px;">Proceed to Pay & Register</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
+
+<!-- Razorpay Checkout Script -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+  function switchAuthTab(mode) {
+    document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
+    document.getElementById('tabRegister').classList.toggle('active', mode === 'register');
+    document.getElementById('loginForm').classList.toggle('hidden', mode !== 'login');
+    document.getElementById('registerForm').classList.toggle('hidden', mode !== 'register');
+  }
+
+  function showToast(msg, isErr = false) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.toggle("error", isErr);
+    t.classList.remove("hidden");
+    setTimeout(() => t.classList.add("hidden"), 3500);
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: document.getElementById("loginEmail").value,
+        password: document.getElementById("loginPassword").value
+      })
+    });
+    const data = await res.json();
+
+    if (res.status === 403 && data.subscription_required) {
+      document.getElementById("subAlert").classList.remove("hidden");
+      triggerCheckout(data.user_id, data.email);
+      return;
+    }
+
+    if (!res.ok) {
+      return showToast(data.error || "Login failed", true);
+    }
+
+    // Success -> redirect to POS Dashboard
+    window.location.href = "/";
+  }
+
+  async function handleRegister(e) {
+    e.preventDefault();
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: document.getElementById("regName").value,
+        email: document.getElementById("regEmail").value,
+        password: document.getElementById("regPassword").value
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) return showToast(data.error || "Registration failed", true);
+
+    // Redirect straight to the QR payment page
+    window.location.href = data.redirect || "/payment-pending";
+  }
+
+  function triggerCheckout(userId, email) {
+    fetch("/api/create-subscription-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId })
+    })
+    .then(r => r.json())
+    .then(order => {
+      const options = {
+        key: "YOUR_RAZORPAY_KEY_ID",
+        amount: order.amount,
+        currency: "INR",
+        name: "AgriKisan Store Manager",
+        description: "Monthly Software Subscription",
+        order_id: order.id,
+        handler: async function (response) {
+          await fetch("/api/verify-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: userId, ...response })
+          });
+          window.location.href = "/";
+        },
+        prefill: { email: email }
+      };
+      const rzp = new Razorpay(options);
+      rzp.open();
+    });
+  }
+</script>
+</body>
+</html>
